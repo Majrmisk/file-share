@@ -1,0 +1,20 @@
+﻿@page "/d/{token}"
+@model FileShare.Pages.DownloadModel
+@{
+    ViewData["Title"] = "Download";
+}
+
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="alert alert-warning">@Model.Error</div>
+}
+else
+{
+    <h3>@Model.FileName</h3>
+    <p>@(Math.Round(Model.FileSize / 1024.0, 1)) KB</p>
+
+    <form method="post" asp-page-handler="Download">
+        <input type="hidden" asp-for="Token" />
+        <button type="submit" class="btn btn-primary">Download</button>
+    </form>
+}

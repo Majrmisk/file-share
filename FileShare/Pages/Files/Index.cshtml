@@ -1,0 +1,93 @@
+﻿@page
+@model FileShare.Pages.Files.IndexModel
+@{
+    ViewData["Title"] = "Uploaded Files";
+}
+
+<h2>Uploaded Files</h2>
+
+<form method="post" enctype="multipart/form-data" asp-page-handler="Upload">
+    <input type="file" id="Upload" name="Upload" class="visually-hidden" />
+    <label for="Upload" class="btn btn-secondary">Choose file</label>
+    <span id="file-name" class="ms-2 text-muted">No file chosen</span>
+    <button type="submit" class="btn btn-primary ms-2">Upload</button>
+</form>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="text-danger">
+        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@err.ErrorMessage</div>
+        }
+    </div>
+}
+
+<table class="table mt-3">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Size</th>
+            <th>Uploaded</th>
+            <th>Link</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var f in Model.MyFiles)
+    {
+        <tr>
+            <td>@f.OriginalName</td>
+            <td>@(Math.Round(f.SizeBytes / 1024.0, 1)) KB</td>
+            <td>@f.CreatedAt.LocalDateTime</td>
+            <td>
+                @if (string.IsNullOrEmpty(f.Token))
+                {
+                    <form method="post" asp-page-handler="CreateLink" asp-route-id="@f.Id" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">Create link</button>
+                    </form>
+                }
+                else
+                {
+                    var url = $"{Request.Scheme}://{Request.Host}/d/{f.Token}";
+                    var shortToken = f.Token!.Length > 20
+                        ? f.Token.Substring(0, 8) + "…" + f.Token.Substring(f.Token.Length - 4)
+                        : f.Token;
+                    var shortPath = $"/d/{shortToken}";
+                    <div class="d-inline-flex align-items-center gap-2">
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary"
+                                onclick="navigator.clipboard.writeText('@url')">
+                            Copy link
+                        </button>
+                            <a href="@url" target="_blank" rel="noopener">@shortPath</a>
+                        <form method="post" asp-page-handler="RevokeLink" asp-route-id="@f.Id" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-danger rounded" title="Revoke link">
+                                Revoke link
+                            </button>
+                        </form>
+                    </div>
+                }
+            </td>
+            <td>
+                <form method="post" asp-page-handler="Delete" asp-route-id="@f.Id" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-danger"
+                            onclick="return confirm('Delete this file? This cannot be undone.')">
+                        Delete File
+                    </button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@section Scripts {
+<script>
+  const input = document.getElementById('Upload');
+  const fileName = document.getElementById('file-name');
+  input.addEventListener('change', function () {
+    fileName.textContent = this.files.length ? this.files[0].name : 'No file chosen';
+  });
+</script>
+}
