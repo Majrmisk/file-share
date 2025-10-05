@@ -1,5 +1,6 @@
 using FileShare.Data;
 using FileShare.Services;
+using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,7 +20,10 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AllowAnonymousToPage("/Download");
 });
 builder.Services.AddScoped<IStorage, BlobStorage>();
-
+if (builder.Environment.IsEnvironment("Docker"))
+{
+    StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
+}
 
 var app = builder.Build();
 
@@ -41,7 +45,10 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsEnvironment("Docker"))
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseRouting();
 
